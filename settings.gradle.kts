@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "kinetic"
 include(":engine")
 include(":wallpaper")
+include(":anim")

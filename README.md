@@ -34,9 +34,9 @@ Kinetic does all of that once. You write only the part that's yours — the anim
 
 | Artifact | Purpose |
 |---|---|
-| `io.github.soumyasethy:kinetic-engine` | The `Scene` contract, `SceneState`, seeded `SceneRng`, scaling + colour helpers. |
-| `io.github.soumyasethy:kinetic-wallpaper` | `SceneWallpaperService` — a `WallpaperService` that drives any `Scene` (loop + battery pause). Pulls `kinetic-engine` transitively. |
-| `kinetic-anim` *(planned)* | Lottie compositing + AGSL runtime-shader scene helpers. |
+| `io.github.soumyasethy:kinetic-engine` | The `Scene` contract, `SceneState` (incl. clock/battery fields), seeded `SceneRng`, `InfoOverlay` (clock · date · battery), scaling + colour helpers. |
+| `io.github.soumyasethy:kinetic-wallpaper` | `SceneWallpaperService` — a `WallpaperService` that drives any `Scene` (loop + battery pause), live scene hot-swap, optional info overlay. Pulls `kinetic-engine` transitively. |
+| `io.github.soumyasethy:kinetic-anim` | `LottieScene` — play a bundled Lottie animation as a full-bleed wallpaper scene. Pulls `kinetic-engine` + Lottie. |
 | `kinetic-notif` *(planned)* | `NotificationListenerService` base + StateFlow bridge for notification-driven scenes. |
 
 ## Install

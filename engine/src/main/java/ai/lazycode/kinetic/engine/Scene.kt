@@ -59,6 +59,13 @@ class SceneState {
      *  The bubble sets this when the user's icon background is "None", so the
      *  characters float directly on the wallpaper. */
     var transparentBg = false
+
+    // --- Wall-clock + battery, filled by the host for the info overlay. ---
+    var hour = 0
+    var minute = 0
+    var dateLabel = ""
+    var batteryPct = 100
+    var charging = false
 }
 
 /**

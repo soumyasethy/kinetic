@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "ai.lazycode.kinetic.engine"
+    namespace = "ai.lazycode.kinetic.anim"
     compileSdk = 35
 
     defaultConfig {
@@ -24,7 +24,9 @@ android {
 }
 
 dependencies {
+    api(project(":engine"))
     implementation(libs.androidx.core.ktx)
+    api(libs.lottie)
 }
 
 afterEvaluate {
@@ -33,7 +35,7 @@ afterEvaluate {
             create<MavenPublication>("release") {
                 from(components["release"])
                 groupId = "io.github.soumyasethy"
-                artifactId = "kinetic-engine"
+                artifactId = "kinetic-anim"
                 version = "0.3.0"
             }
         }
