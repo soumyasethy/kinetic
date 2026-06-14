@@ -7,8 +7,9 @@ and render it anywhere: an in-app Compose canvas, a **live wallpaper**, a home-s
 widget, or a notification. One render contract, every surface, no per-frame allocation,
 battery-disciplined by default.
 
-<!-- TODO: hero GIF of a wallpaper scene running on a device -->
-<!-- ![Kinetic live wallpaper demo](docs/demo.gif) -->
+![Kinetic-powered live wallpapers](docs/showcase.png)
+
+*Live wallpapers built on Kinetic, from the [Tumble](https://github.com/soumyasethy/tumble) app.*
 
 ![minSdk](https://img.shields.io/badge/minSdk-26-blue)
 ![license](https://img.shields.io/badge/license-Apache--2.0-green)

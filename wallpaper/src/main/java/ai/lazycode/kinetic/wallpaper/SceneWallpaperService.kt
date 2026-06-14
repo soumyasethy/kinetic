@@ -29,10 +29,21 @@ abstract class SceneWallpaperService : WallpaperService() {
     /** Ambient "energy" 0..1 fed to the scene when there's no live driver. */
     protected open fun ambientSc(timeS: Float): Float = 0.4f
 
+    // Bumped to hot-swap the live scene without re-applying the wallpaper. Call
+    // [reloadScene] (e.g. from a SharedPreferences listener) when the user picks
+    // a different scene; every running engine rebuilds via [createScene] next frame.
+    @Volatile
+    private var sceneVersion = 0
+
+    protected fun reloadScene() {
+        sceneVersion++
+    }
+
     override fun onCreateEngine(): Engine = SceneEngine()
 
     private inner class SceneEngine : Engine() {
-        private val scene = createScene()
+        private var scene = createScene()
+        private var localVersion = sceneVersion
         private val state = SceneState()
         private val choreographer = Choreographer.getInstance()
         private var visible = false
@@ -70,6 +81,10 @@ abstract class SceneWallpaperService : WallpaperService() {
                     holder.lockCanvas()
                 }) ?: return
             try {
+                if (localVersion != sceneVersion) {
+                    scene = createScene()
+                    localVersion = sceneVersion
+                }
                 val dt = if (lastNanos == 0L) {
                     0f
                 } else {
