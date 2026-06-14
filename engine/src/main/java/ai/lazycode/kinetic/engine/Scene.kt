@@ -67,6 +67,9 @@ class SceneState {
     var batteryPct = 100
     var charging = false
 
+    /** 24-hour vs 12-hour (AM/PM) clock — host sets from the system preference. */
+    var is24h = true
+
     // --- Device tilt, -1..1 each axis (gravity, smoothed). +x = tilted right,
     //     +y = tilted toward the top. Scenes use it for parallax / motion. ---
     var tiltX = 0f

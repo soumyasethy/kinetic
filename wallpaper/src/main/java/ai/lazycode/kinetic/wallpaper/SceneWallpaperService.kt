@@ -63,6 +63,7 @@ abstract class SceneWallpaperService : WallpaperService() {
         // Cached time/date/battery — refreshed cheaply, not rebuilt per frame.
         private val cal = Calendar.getInstance()
         private val dateFmt = SimpleDateFormat("EEE, d MMM", Locale.getDefault())
+        private val is24Hour = android.text.format.DateFormat.is24HourFormat(this@SceneWallpaperService)
         private var lastDay = -1
         private var dateLabel = ""
         private var battFrame = 0
@@ -124,6 +125,7 @@ abstract class SceneWallpaperService : WallpaperService() {
                 lastDay = day
             }
             state.dateLabel = dateLabel
+            state.is24h = is24Hour
             // Battery is slow-changing — poll ~every 2s, not every frame.
             if (battFrame == 0) {
                 val bm = getSystemService(BATTERY_SERVICE) as? BatteryManager

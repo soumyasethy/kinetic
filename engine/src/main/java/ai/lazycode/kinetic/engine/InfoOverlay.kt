@@ -27,9 +27,15 @@ object InfoOverlay {
 
         clock.textSize = h * 0.085f
         clock.setShadowLayer(h * 0.012f, 0f, h * 0.004f, 0x99000000.toInt())
-        val hh = s.hour.toString().padStart(2, '0')
         val mm = s.minute.toString().padStart(2, '0')
-        canvas.drawText("$hh:$mm", cx, top, clock)
+        val timeText = if (s.is24h) {
+            "${s.hour.toString().padStart(2, '0')}:$mm"
+        } else {
+            val h12 = ((s.hour + 11) % 12) + 1
+            val ampm = if (s.hour < 12) "AM" else "PM"
+            "$h12:$mm $ampm"
+        }
+        canvas.drawText(timeText, cx, top, clock)
 
         sub.setShadowLayer(h * 0.009f, 0f, h * 0.003f, 0x99000000.toInt())
         sub.textSize = h * 0.024f
