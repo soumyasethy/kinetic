@@ -66,6 +66,11 @@ class SceneState {
     var dateLabel = ""
     var batteryPct = 100
     var charging = false
+
+    // --- Device tilt, -1..1 each axis (gravity, smoothed). +x = tilted right,
+    //     +y = tilted toward the top. Scenes use it for parallax / motion. ---
+    var tiltX = 0f
+    var tiltY = 0f
 }
 
 /**

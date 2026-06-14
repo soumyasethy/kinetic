@@ -1,6 +1,10 @@
 package ai.lazycode.kinetic.wallpaper
 
 import android.graphics.Canvas
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.BatteryManager
 import android.os.Build
 import android.service.wallpaper.WallpaperService
@@ -63,6 +67,23 @@ abstract class SceneWallpaperService : WallpaperService() {
         private var dateLabel = ""
         private var battFrame = 0
 
+        // Tilt (gravity sensor). Raw values set on the sensor thread; low-pass
+        // smoothed into SceneState on the render thread.
+        private val sensorManager = getSystemService(SENSOR_SERVICE) as? SensorManager
+        private val gravity = sensorManager?.getDefaultSensor(Sensor.TYPE_GRAVITY)
+        @Volatile private var rawTiltX = 0f
+        @Volatile private var rawTiltY = 0f
+        private var smoothTiltX = 0f
+        private var smoothTiltY = 0f
+        private val tiltListener = object : SensorEventListener {
+            override fun onSensorChanged(e: SensorEvent) {
+                // Gravity ~9.8 m/s²; map to -1..1. +x tilt-right, +y tilt-up.
+                rawTiltX = (-e.values[0] / SensorManager.GRAVITY_EARTH).coerceIn(-1f, 1f)
+                rawTiltY = (e.values[1] / SensorManager.GRAVITY_EARTH).coerceIn(-1f, 1f)
+            }
+            override fun onAccuracyChanged(s: Sensor?, a: Int) {}
+        }
+
         private val frame = object : Choreographer.FrameCallback {
             override fun doFrame(now: Long) {
                 if (!visible) return
@@ -76,14 +97,19 @@ abstract class SceneWallpaperService : WallpaperService() {
             if (v) {
                 lastNanos = 0L
                 battFrame = 0
+                if (gravity != null) {
+                    sensorManager?.registerListener(tiltListener, gravity, SensorManager.SENSOR_DELAY_GAME)
+                }
                 choreographer.postFrameCallback(frame)
             } else {
+                sensorManager?.unregisterListener(tiltListener)
                 choreographer.removeFrameCallback(frame)
             }
         }
 
         override fun onSurfaceDestroyed(holder: SurfaceHolder) {
             visible = false
+            sensorManager?.unregisterListener(tiltListener)
             choreographer.removeFrameCallback(frame)
         }
 
@@ -127,6 +153,11 @@ abstract class SceneWallpaperService : WallpaperService() {
                 state.timeS += dt
                 state.dtS = dt
                 state.sc = ambientSc(state.timeS)
+                // Low-pass smooth the tilt so parallax glides instead of jitters.
+                smoothTiltX += (rawTiltX - smoothTiltX) * 0.08f
+                smoothTiltY += (rawTiltY - smoothTiltY) * 0.08f
+                state.tiltX = smoothTiltX
+                state.tiltY = smoothTiltY
                 val w = canvas.width.toFloat()
                 val h = canvas.height.toFloat()
                 scene.render(canvas, w, h, state)
