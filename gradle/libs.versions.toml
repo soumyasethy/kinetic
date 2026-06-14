@@ -3,10 +3,12 @@ agp = "8.7.3"
 kotlin = "2.0.21"
 coreKtx = "1.15.0"
 lottie = "6.6.0"
+billing = "7.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 lottie = { group = "com.airbnb.android", name = "lottie", version.ref = "lottie" }
+billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
 
 [plugins]
 android-library = { id = "com.android.library", version.ref = "agp" }

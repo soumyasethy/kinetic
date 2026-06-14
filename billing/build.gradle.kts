@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "ai.lazycode.kinetic.wallpaper"
+    namespace = "ai.lazycode.kinetic.billing"
     compileSdk = 35
 
     defaultConfig {
@@ -24,9 +24,8 @@ android {
 }
 
 dependencies {
-    // `api` so consumers of kinetic-wallpaper get the engine transitively.
-    api(project(":engine"))
     implementation(libs.androidx.core.ktx)
+    api(libs.billing.ktx)
 }
 
 afterEvaluate {
@@ -35,7 +34,7 @@ afterEvaluate {
             create<MavenPublication>("release") {
                 from(components["release"])
                 groupId = "io.github.soumyasethy"
-                artifactId = "kinetic-wallpaper"
+                artifactId = "kinetic-billing"
                 version = "0.5.0"
             }
         }

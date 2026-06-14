@@ -23,3 +23,4 @@ rootProject.name = "kinetic"
 include(":engine")
 include(":wallpaper")
 include(":anim")
+include(":billing")
