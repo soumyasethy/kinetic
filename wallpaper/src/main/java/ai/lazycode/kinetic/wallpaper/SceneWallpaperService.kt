@@ -42,6 +42,24 @@ abstract class SceneWallpaperService : WallpaperService() {
     /** Draw the clock + date + battery overlay over the scene. */
     protected open fun showInfo(): Boolean = false
 
+    /**
+     * Battery discipline: cap how many frames per second we actually draw. The
+     * Choreographer still fires at the display refresh (60/120 Hz), but we skip
+     * the render whenever less than 1/targetFps has elapsed since the last draw.
+     * Motion speed is unaffected (dt tracks real elapsed time between *drawn*
+     * frames) — we just draw fewer of them. Calm scenes want 30; games ~45.
+     */
+    protected open fun targetFps(): Int = 60
+
+    /** Tilt sensor sampling rate. Calm scenes can use a slower delay to save power. */
+    protected open fun sensorDelay(): Int = SensorManager.SENSOR_DELAY_GAME
+
+    /**
+     * Tilt low-pass time constant in seconds. ~0.2 s makes parallax glide; tilt-steered
+     * games want ~0.03–0.05 s so the controls feel direct. Frame-rate independent.
+     */
+    protected open fun tiltLagSeconds(): Float = 0.2f
+
     // Bumped to hot-swap the live scene without re-applying the wallpaper.
     @Volatile
     private var sceneVersion = 0
@@ -85,10 +103,17 @@ abstract class SceneWallpaperService : WallpaperService() {
             override fun onAccuracyChanged(s: Sensor?, a: Int) {}
         }
 
+        private var lastDrawnNanos = 0L
+
         private val frame = object : Choreographer.FrameCallback {
             override fun doFrame(now: Long) {
                 if (!visible) return
-                drawFrame(now)
+                // Skip this vsync if we're already at/above the target frame rate.
+                val minInterval = 1_000_000_000L / targetFps().coerceIn(1, 120)
+                if (lastDrawnNanos == 0L || now - lastDrawnNanos >= minInterval) {
+                    lastDrawnNanos = now
+                    drawFrame(now)
+                }
                 choreographer.postFrameCallback(this)
             }
         }
@@ -97,9 +122,10 @@ abstract class SceneWallpaperService : WallpaperService() {
             visible = v
             if (v) {
                 lastNanos = 0L
+                lastDrawnNanos = 0L
                 battFrame = 0
                 if (gravity != null) {
-                    sensorManager?.registerListener(tiltListener, gravity, SensorManager.SENSOR_DELAY_GAME)
+                    sensorManager?.registerListener(tiltListener, gravity, sensorDelay())
                 }
                 choreographer.postFrameCallback(frame)
             } else {
@@ -156,8 +182,10 @@ abstract class SceneWallpaperService : WallpaperService() {
                 state.dtS = dt
                 state.sc = ambientSc(state.timeS)
                 // Low-pass smooth the tilt so parallax glides instead of jitters.
-                smoothTiltX += (rawTiltX - smoothTiltX) * 0.08f
-                smoothTiltY += (rawTiltY - smoothTiltY) * 0.08f
+                val lag = tiltLagSeconds()
+                val k = if (lag <= 0f) 1f else 1f - kotlin.math.exp(-dt / lag)
+                smoothTiltX += (rawTiltX - smoothTiltX) * k
+                smoothTiltY += (rawTiltY - smoothTiltY) * k
                 state.tiltX = smoothTiltX
                 state.tiltY = smoothTiltY
                 val w = canvas.width.toFloat()

@@ -36,7 +36,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "io.github.soumyasethy"
                 artifactId = "kinetic-wallpaper"
-                version = "0.6.0"
+                version = "0.7.0"
             }
         }
     }
