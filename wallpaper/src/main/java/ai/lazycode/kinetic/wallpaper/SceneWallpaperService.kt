@@ -180,6 +180,7 @@ abstract class SceneWallpaperService : WallpaperService() {
                 lastNanos = now
                 state.timeS += dt
                 state.dtS = dt
+                state.preview = isPreview
                 state.sc = ambientSc(state.timeS)
                 // Low-pass smooth the tilt so parallax glides instead of jitters.
                 val lag = tiltLagSeconds()
