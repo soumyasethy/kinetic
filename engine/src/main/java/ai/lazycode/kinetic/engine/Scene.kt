@@ -60,6 +60,10 @@ class SceneState {
      *  characters float directly on the wallpaper. */
     var transparentBg = false
 
+    /** True while the wallpaper runs inside the system "set wallpaper" preview: scenes
+     *  should keep clear of the system's top and bottom controls (hide HUDs, hints). */
+    var preview = false
+
     // --- Wall-clock + battery, filled by the host for the info overlay. ---
     var hour = 0
     var minute = 0
