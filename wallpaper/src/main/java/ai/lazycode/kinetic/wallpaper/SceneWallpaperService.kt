@@ -13,6 +13,7 @@ import android.view.SurfaceHolder
 import ai.lazycode.kinetic.engine.InfoOverlay
 import ai.lazycode.kinetic.engine.Scene
 import ai.lazycode.kinetic.engine.SceneState
+import ai.lazycode.kinetic.engine.TiltCalibrator
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -94,11 +95,16 @@ abstract class SceneWallpaperService : WallpaperService() {
         @Volatile private var rawTiltY = 0f
         private var smoothTiltX = 0f
         private var smoothTiltY = 0f
+        // Maps gravity to -1..1 (+x tilt-right, +y tilt-up) in any posture, lying down included.
+        private val calibrator = TiltCalibrator()
+        private var lastSensorNanos = 0L
         private val tiltListener = object : SensorEventListener {
             override fun onSensorChanged(e: SensorEvent) {
-                // Gravity ~9.8 m/s²; map to -1..1. +x tilt-right, +y tilt-up.
-                rawTiltX = (-e.values[0] / SensorManager.GRAVITY_EARTH).coerceIn(-1f, 1f)
-                rawTiltY = (e.values[1] / SensorManager.GRAVITY_EARTH).coerceIn(-1f, 1f)
+                val dt = if (lastSensorNanos == 0L) 0f else ((e.timestamp - lastSensorNanos) / 1_000_000_000f).coerceIn(0f, 0.25f)
+                lastSensorNanos = e.timestamp
+                calibrator.update(e.values[0], e.values[1], e.values[2], dt)
+                rawTiltX = calibrator.tiltX
+                rawTiltY = calibrator.tiltY
             }
             override fun onAccuracyChanged(s: Sensor?, a: Int) {}
         }
@@ -125,6 +131,8 @@ abstract class SceneWallpaperService : WallpaperService() {
                 lastDrawnNanos = 0L
                 battFrame = 0
                 if (gravity != null) {
+                    calibrator.reset()
+                    lastSensorNanos = 0L
                     sensorManager?.registerListener(tiltListener, gravity, sensorDelay())
                 }
                 choreographer.postFrameCallback(frame)
