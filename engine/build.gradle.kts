@@ -25,6 +25,7 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    testImplementation("junit:junit:4.13.2")
 }
 
 afterEvaluate {
@@ -34,7 +35,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "io.github.soumyasethy"
                 artifactId = "kinetic-engine"
-                version = "0.8.0"
+                version = "0.9.0"
             }
         }
     }
