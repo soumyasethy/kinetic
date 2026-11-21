@@ -13,6 +13,7 @@ import android.view.SurfaceHolder
 import ai.lazycode.kinetic.engine.InfoOverlay
 import ai.lazycode.kinetic.engine.Scene
 import ai.lazycode.kinetic.engine.SceneState
+import ai.lazycode.kinetic.engine.SensorWatchdog
 import ai.lazycode.kinetic.engine.GravityFilter
 import ai.lazycode.kinetic.engine.TiltCalibrator
 import java.text.SimpleDateFormat
@@ -102,8 +103,12 @@ abstract class SceneWallpaperService : WallpaperService() {
         // Maps gravity to -1..1 (+x tilt-right, +y tilt-up) in any posture, lying down included.
         private val calibrator = TiltCalibrator()
         private var lastSensorNanos = 0L
+        // Re-registers the tilt listener if events stop while visible (some OEM power managers
+        // cut the accelerometer feed silently; only a new registration brings it back).
+        private val watchdog = SensorWatchdog()
         private val tiltListener = object : SensorEventListener {
             override fun onSensorChanged(e: SensorEvent) {
+                watchdog.onEvent(System.nanoTime())
                 val dt = if (lastSensorNanos == 0L) 0f else ((e.timestamp - lastSensorNanos) / 1_000_000_000f).coerceIn(0f, 0.25f)
                 lastSensorNanos = e.timestamp
                 val f = accelFilter
@@ -145,6 +150,7 @@ abstract class SceneWallpaperService : WallpaperService() {
                     accelFilter?.reset()
                     lastSensorNanos = 0L
                     sensorManager?.registerListener(tiltListener, gravity, sensorDelay())
+                    watchdog.started(System.nanoTime())
                 }
                 choreographer.postFrameCallback(frame)
             } else {
@@ -157,6 +163,18 @@ abstract class SceneWallpaperService : WallpaperService() {
             visible = false
             sensorManager?.unregisterListener(tiltListener)
             choreographer.removeFrameCallback(frame)
+        }
+
+        private fun restartTiltIfSilent() {
+            val sm = sensorManager ?: return
+            if (gravity == null || !visible) return
+            val now = System.nanoTime()
+            if (!watchdog.shouldRestart(now)) return
+            // Keep the calibration: only the feed restarts, the pose hasn't changed.
+            sm.unregisterListener(tiltListener)
+            lastSensorNanos = 0L
+            sm.registerListener(tiltListener, gravity, sensorDelay())
+            watchdog.started(now)
         }
 
         private fun refreshInfo() {
@@ -206,6 +224,8 @@ abstract class SceneWallpaperService : WallpaperService() {
                 val k = if (lag <= 0f) 1f else 1f - kotlin.math.exp(-dt / lag)
                 smoothTiltX += (rawTiltX - smoothTiltX) * k
                 smoothTiltY += (rawTiltY - smoothTiltY) * k
+                if (!smoothTiltX.isFinite() || !smoothTiltY.isFinite()) { smoothTiltX = 0f; smoothTiltY = 0f }
+                restartTiltIfSilent()
                 state.tiltX = smoothTiltX
                 state.tiltY = smoothTiltY
                 val w = canvas.width.toFloat()

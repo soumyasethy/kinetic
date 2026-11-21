@@ -40,4 +40,13 @@ class GravityFilterTest {
         }
         assertTrue("shake left in x: $worst", worst < 0.6f)
     }
+
+    @Test
+    fun aNonFiniteReadingIsSkipped() {
+        val f = GravityFilter()
+        f.update(0f, g, 0f, 0f)
+        f.update(Float.NaN, g, 0f, 0.01f)
+        assertTrue(f.x.isFinite())
+        assertEquals(0f, f.x, 0f)
+    }
 }

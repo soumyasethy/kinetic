@@ -45,6 +45,8 @@ class TiltCalibrator {
 
     /** Feeds one reading; [dtS] is the time since the previous one. */
     fun update(gx: Float, gy: Float, gz: Float, dtS: Float) {
+        // A NaN or infinite reading would poison every later frame; skip it.
+        if (!gx.isFinite() || !gy.isFinite() || !gz.isFinite() || !dtS.isFinite()) return
         val n = sqrt(gx * gx + gy * gy + gz * gz)
         if (n < 1e-3f) return
         val x = gx / n

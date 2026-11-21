@@ -36,7 +36,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "io.github.soumyasethy"
                 artifactId = "kinetic-anim"
-                version = "0.9.1"
+                version = "0.9.2"
             }
         }
     }

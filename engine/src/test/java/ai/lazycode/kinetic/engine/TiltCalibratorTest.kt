@@ -101,4 +101,15 @@ class TiltCalibratorTest {
         assertFalse(c.sideways)
         assertEquals(0f, c.tiltX, eps)
     }
+
+    @Test
+    fun aNonFiniteReadingIsSkipped() {
+        val c = TiltCalibrator()
+        hold(c, floatArrayOf(-3f, 6f, 7f), 1f)
+        c.update(Float.NaN, 6f, 7f, 0.02f)
+        c.update(-3f, Float.POSITIVE_INFINITY, 7f, 0.02f)
+        assertTrue(c.tiltX.isFinite() && c.tiltY.isFinite())
+        hold(c, floatArrayOf(3f, 6f, 7f), 1f)
+        assertEquals(-3f / g, c.tiltX, eps)
+    }
 }
