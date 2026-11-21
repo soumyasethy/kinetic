@@ -13,6 +13,7 @@ import android.view.SurfaceHolder
 import ai.lazycode.kinetic.engine.InfoOverlay
 import ai.lazycode.kinetic.engine.Scene
 import ai.lazycode.kinetic.engine.SceneState
+import ai.lazycode.kinetic.engine.GravityFilter
 import ai.lazycode.kinetic.engine.TiltCalibrator
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -88,9 +89,12 @@ abstract class SceneWallpaperService : WallpaperService() {
         private var battFrame = 0
 
         // Tilt (gravity sensor). Raw values set on the sensor thread; low-pass
-        // smoothed into SceneState on the render thread.
+        // smoothed into SceneState on the render thread. Phones without a gravity
+        // sensor (budget Xiaomi/Redmi) fall back to the accelerometer, filtered to gravity.
         private val sensorManager = getSystemService(SENSOR_SERVICE) as? SensorManager
-        private val gravity = sensorManager?.getDefaultSensor(Sensor.TYPE_GRAVITY)
+        private val gravitySensor = sensorManager?.getDefaultSensor(Sensor.TYPE_GRAVITY)
+        private val gravity = gravitySensor ?: sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        private val accelFilter = if (gravitySensor == null) GravityFilter() else null
         @Volatile private var rawTiltX = 0f
         @Volatile private var rawTiltY = 0f
         private var smoothTiltX = 0f
@@ -102,7 +106,13 @@ abstract class SceneWallpaperService : WallpaperService() {
             override fun onSensorChanged(e: SensorEvent) {
                 val dt = if (lastSensorNanos == 0L) 0f else ((e.timestamp - lastSensorNanos) / 1_000_000_000f).coerceIn(0f, 0.25f)
                 lastSensorNanos = e.timestamp
-                calibrator.update(e.values[0], e.values[1], e.values[2], dt)
+                val f = accelFilter
+                if (f == null) {
+                    calibrator.update(e.values[0], e.values[1], e.values[2], dt)
+                } else {
+                    f.update(e.values[0], e.values[1], e.values[2], dt)
+                    calibrator.update(f.x, f.y, f.z, dt)
+                }
                 rawTiltX = calibrator.tiltX
                 rawTiltY = calibrator.tiltY
             }
@@ -132,6 +142,7 @@ abstract class SceneWallpaperService : WallpaperService() {
                 battFrame = 0
                 if (gravity != null) {
                     calibrator.reset()
+                    accelFilter?.reset()
                     lastSensorNanos = 0L
                     sensorManager?.registerListener(tiltListener, gravity, sensorDelay())
                 }
