@@ -22,6 +22,7 @@ class GravityFilter(private val tauS: Float = 0.1f) {
 
     /** Feeds one accelerometer reading (m/s²); [dtS] is the time since the previous one. */
     fun update(ax: Float, ay: Float, az: Float, dtS: Float) {
+        if (!ax.isFinite() || !ay.isFinite() || !az.isFinite() || !dtS.isFinite()) return // would stick forever
         if (!started) {
             started = true
             x = ax; y = ay; z = az
